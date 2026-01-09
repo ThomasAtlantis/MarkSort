@@ -119,3 +119,10 @@ class RedNoteAPI:
         has_more = res['data']['has_more']
         return res['data']['notes'], has_more
 
+
+    async def download_video(self, url: str, note_id: str):
+        response = await rnet_client.get(url=url, cookies=self.cookies)
+        file_name = f"{note_id}.{url.split('.')[-1]}"
+        with open(file_name, "wb") as f:
+            f.write(await response.bytes())
+        return file_name
