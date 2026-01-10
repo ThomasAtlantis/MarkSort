@@ -87,7 +87,7 @@ class RedNoteAPI:
             raise Exception(f"Error {result['code']}: {result['msg']}")
         return result['data']['items'][0]
     
-    async def get_marks(self, num: int, cursor: str|None = None) -> tuple[list[Note], bool]:
+    async def get_marks(self, num: int, cursor: str|None = None) -> tuple[list[Note], bool, str]:
         uri = self.uri_map[("GET", "marks")]
         statics = StaticVariable(self.get_marks)
         cursor_ = statics.init("_cursor", cursor)
@@ -117,7 +117,7 @@ class RedNoteAPI:
             raise Exception(f"Error {res['code']}: {res['msg']}")
         statics.set("_cursor", res['data']['cursor'])
         has_more = res['data']['has_more']
-        return res['data']['notes'], has_more
+        return res['data']['notes'], has_more, res['data']['cursor']
 
 
     async def download_video(self, url: str, note_id: str):
