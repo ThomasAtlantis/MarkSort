@@ -13,7 +13,8 @@ dist-ssr
 *.local
 
 # Data files (contains sensitive information)
-public/notes.json
+public/*.json
+public/images/
 
 # Editor directories and files
 .vscode/*

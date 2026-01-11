@@ -1,32 +1,32 @@
-import type { Category, NoteWithDetail } from '../types';
+import type { Category, UnifiedItem } from '../types';
 import './CategoryNav.css';
-import { filterNotesByCategory } from '../services/dataService';
+import { filterItemsByCategory } from '../services/dataService';
 
 interface CategoryNavProps {
   categories: Category[];
   activeCategoryId: string;
-  notes: NoteWithDetail[];
+  items: UnifiedItem[];
   onCategoryChange: (categoryId: string) => void;
 }
 
 export default function CategoryNav({ 
   categories, 
   activeCategoryId, 
-  notes,
+  items,
   onCategoryChange 
 }: CategoryNavProps) {
-  const getNoteCount = (category: Category): number => {
+  const getItemCount = (category: Category): number => {
     if (category.id === 'all') {
-      return notes.length;
+      return items.length;
     }
-    return filterNotesByCategory(notes, category).length;
+    return filterItemsByCategory(items, category).length;
   };
 
   return (
     <nav className="category-nav">
       <div className="category-nav-container">
         {categories.map(category => {
-          const count = getNoteCount(category);
+          const count = getItemCount(category);
           return (
             <button
               key={category.id}

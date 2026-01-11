@@ -177,9 +177,45 @@ export interface NoteWithDetail extends Note {
   detail?: NoteDetail;
 }
 
+// Platform type
+export type Platform = 'xiaohongshu' | 'bilibili';
+
 // Category type
 export interface Category {
   id: string;
   name: string;
   tagIds: string[];
+}
+
+// Unified item interface for multi-platform support
+export interface UnifiedItem {
+  platform: Platform;
+  id: string;
+  title: string;
+  description: string;
+  cover: string;
+  author: {
+    name: string;
+    avatar: string;
+  };
+  url: string;
+  tags: Tag[];
+  interactInfo: {
+    liked_count?: string;
+    collected_count?: string;
+    comment_count?: string;
+    play_count?: string;
+  };
+  // Optional fields for video content
+  videoUrl?: string | null;
+  duration?: number;
+  // Bilibili iframe player parameters
+  bilibiliPlayerParams?: {
+    aid: number;
+    bvid: string;
+    cid: number;
+    page: number;
+  };
+  // Original data for platform-specific features
+  originalData: any;
 }

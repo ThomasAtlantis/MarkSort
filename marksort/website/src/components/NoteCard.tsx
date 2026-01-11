@@ -1,31 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
-import type { NoteWithDetail } from '../types';
-import { getNoteUrl, getCoverImageUrl, getVideoUrl } from '../services/dataService';
+import type { UnifiedItem } from '../types';
+import { getPlatformName } from '../services/dataService';
 import './NoteCard.css';
 
 interface NoteCardProps {
-  note: NoteWithDetail;
+  item: UnifiedItem;
 }
 
-export default function NoteCard({ note }: NoteCardProps) {
+export default function NoteCard({ item }: NoteCardProps) {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const coverUrl = getCoverImageUrl(note);
-  const noteUrl = getNoteUrl(note.note_id, note.xsec_token);
-  const videoUrl = getVideoUrl(note);
-
-  const title = note.detail?.note_card.title || note.display_title;
-  const author = note.detail?.note_card.user.nickname || note.user.nickname;
-  const description = note.detail?.note_card.desc || '';
-  const tags = note.detail?.note_card.tag_list || [];
-  const interactInfo = note.detail?.note_card.interact_info || note.interact_info;
-  const avatar = note.detail?.note_card.user.avatar || note.user.avatar;
+  const videoUrl = item.videoUrl;
+  const isBilibili = item.platform === 'bilibili';
+  const hasVideo = !!videoUrl || !!item.bilibiliPlayerParams;
 
   const handleVideoClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (videoUrl) {
+    if (videoUrl || item.bilibiliPlayerParams) {
       setIsVideoPlaying(true);
     }
   };
@@ -49,23 +43,60 @@ export default function NoteCard({ note }: NoteCardProps) {
     };
   }, [videoUrl]);
 
+  const platformName = getPlatformName(item.platform);
+
+  // Format duration for display (seconds to mm:ss)
+  const formatDuration = (seconds?: number): string => {
+    if (!seconds) return '';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Generate bilibili iframe src URL
+  const getBilibiliIframeSrc = (): string => {
+    if (!item.bilibiliPlayerParams) return '';
+    const { aid, bvid, cid, page } = item.bilibiliPlayerParams;
+    const params = new URLSearchParams({
+      isOutside: 'true',
+      aid: String(aid),
+      bvid: bvid,
+      cid: String(cid),
+      p: String(page),
+    });
+    return `//player.bilibili.com/player.html?${params.toString()}`;
+  };
+
   return (
     <div className="note-card">
       <div className="note-card-header">
         <div className="note-cover">
-          {isVideoPlaying && videoUrl ? (
+          {isVideoPlaying && (videoUrl || item.bilibiliPlayerParams) ? (
             <div className="video-container">
-              <video
-                ref={videoRef}
-                src={videoUrl}
-                controls
-                className="note-video"
-                playsInline
-                onError={(e) => {
-                  console.error('Video load error:', e);
-                  setIsVideoPlaying(false);
-                }}
-              />
+              {isBilibili && item.bilibiliPlayerParams ? (
+                <iframe
+                  ref={iframeRef}
+                  src={getBilibiliIframeSrc()}
+                  className="bilibili-iframe"
+                  scrolling="no"
+                  style={{ border: 'none' }}
+                  allowFullScreen
+                />
+              ) : (
+                videoUrl && (
+                  <video
+                    ref={videoRef}
+                    src={videoUrl}
+                    controls
+                    className="note-video"
+                    playsInline
+                    onError={(e) => {
+                      console.error('Video load error:', e);
+                      setIsVideoPlaying(false);
+                    }}
+                  />
+                )
+              )}
               <button
                 className="video-close-button"
                 onClick={handleCloseVideo}
@@ -79,10 +110,10 @@ export default function NoteCard({ note }: NoteCardProps) {
             </div>
           ) : (
             <>
-              {coverUrl && (
+              {item.cover && (
                 <img
-                  src={coverUrl}
-                  alt={title}
+                  src={item.cover}
+                  alt={item.title}
                   loading="lazy"
                   onError={(e) => {
                     // Fallback if image fails to load
@@ -90,7 +121,7 @@ export default function NoteCard({ note }: NoteCardProps) {
                   }}
                 />
               )}
-              {note.detail?.note_card.type === 'video' && videoUrl && (
+              {hasVideo && (
                 <div
                   className="video-badge"
                   onClick={handleVideoClick}
@@ -101,33 +132,43 @@ export default function NoteCard({ note }: NoteCardProps) {
                   </svg>
                 </div>
               )}
+              {item.duration && (
+                <div className="duration-badge">
+                  {formatDuration(item.duration)}
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
 
       <div className="note-card-body">
-        <h3 className="note-title">{title}</h3>
+        <div className="note-header-row">
+          <h3 className="note-title">{item.title}</h3>
+          <span className={`platform-badge platform-badge-${item.platform}`}>
+            {platformName}
+          </span>
+        </div>
 
         <div className="note-author">
           <img
-            src={avatar}
-            alt={author}
+            src={item.author.avatar}
+            alt={item.author.name}
             className="author-avatar"
             onError={(e) => {
               (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="18" fill="%23ddd"/></svg>';
             }}
           />
-          <span className="author-name">{author}</span>
+          <span className="author-name">{item.author.name}</span>
         </div>
 
-        {description && (
-          <p className="note-description">{description}</p>
+        {item.description && (
+          <p className="note-description">{item.description}</p>
         )}
 
-        {tags.length > 0 && (
+        {item.tags.length > 0 && (
           <div className="note-tags">
-            {tags.map(tag => (
+            {item.tags.map(tag => (
               <span key={tag.id} className="tag">
                 #{tag.name}
               </span>
@@ -136,37 +177,47 @@ export default function NoteCard({ note }: NoteCardProps) {
         )}
 
         <div className="note-interactions">
-          <span className="interaction-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-            {interactInfo.liked_count || '0'}
-          </span>
-          {note.detail?.note_card.interact_info && (
-            <>
-              <span className="interaction-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM17.99 9l-1.41-1.42-6.59 6.59-2.58-2.57-1.42 1.41 4 3.99z" />
-                </svg>
-                {note.detail.note_card.interact_info.collected_count || '0'}
-              </span>
-              <span className="interaction-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-                </svg>
-                {note.detail.note_card.interact_info.comment_count || '0'}
-              </span>
-            </>
+          {item.interactInfo.liked_count && (
+            <span className="interaction-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              {item.interactInfo.liked_count}
+            </span>
+          )}
+          {item.interactInfo.collected_count && (
+            <span className="interaction-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM17.99 9l-1.41-1.42-6.59 6.59-2.58-2.57-1.42 1.41 4 3.99z" />
+              </svg>
+              {item.interactInfo.collected_count}
+            </span>
+          )}
+          {item.interactInfo.comment_count && (
+            <span className="interaction-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+              </svg>
+              {item.interactInfo.comment_count}
+            </span>
+          )}
+          {item.interactInfo.play_count && (
+            <span className="interaction-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              {item.interactInfo.play_count}
+            </span>
           )}
         </div>
 
         <a
-          href={noteUrl}
+          href={item.url}
           target="_blank"
           rel="noopener noreferrer"
           className="note-link"
         >
-          查看原动态 →
+          查看原文 →
         </a>
       </div>
     </div>
