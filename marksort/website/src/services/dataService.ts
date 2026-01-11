@@ -84,10 +84,20 @@ function getNoteUrl(noteId: string, xsecToken: string): string {
 }
 
 // Convert Xiaohongshu note to UnifiedItem
+function localizeUrl(url: string): string {
+  if (!url) return '';
+  url = url.split('!')[0];
+  url = url.split('?')[0];
+  let fileName = url.split('/').pop() || '';
+  if (fileName && !fileName.endsWith('.jpg')) {
+    fileName = fileName + '.jpg';
+  }
+  return `/images_rednote/${fileName}`;
+}
 function convertXiaohongshuNote(note: NoteWithDetail): UnifiedItem {
   const title = note.detail?.note_card.title || note.display_title;
   const description = note.detail?.note_card.desc || '';
-  const coverUrl = getCoverImageUrl(note);
+  const coverUrl = localizeUrl(getCoverImageUrl(note));
   const author = note.detail?.note_card.user || note.user;
   const tags = note.detail?.note_card.tag_list || [];
   const interactInfo = note.detail?.note_card.interact_info || note.interact_info;
@@ -102,7 +112,7 @@ function convertXiaohongshuNote(note: NoteWithDetail): UnifiedItem {
     cover: coverUrl,
     author: {
       name: author.nickname,
-      avatar: author.avatar,
+      avatar: localizeUrl(author.avatar),
     },
     url: noteUrl,
     tags,
@@ -119,9 +129,8 @@ function convertXiaohongshuNote(note: NoteWithDetail): UnifiedItem {
 // Convert Bilibili media to UnifiedItem
 function convertBilibiliMedia(media: BilibiliMedia): UnifiedItem {
   const videoUrl = `https://www.bilibili.com/video/${media.bvid}`;
-  // Extract filename from cover URL (JavaScript doesn't support negative indexing like Python)
   const coverFilename = media.cover ? media.cover.split('/').pop() || '' : '';
-  const coverUrl = coverFilename ? `/images/${coverFilename}` : '';
+  const coverUrl = coverFilename ? `/images_bilibili/${coverFilename}` : '';
   
   // Extract bilibili player parameters for iframe embedding
   const bilibiliPlayerParams = media.ugc?.first_cid ? {
@@ -139,7 +148,7 @@ function convertBilibiliMedia(media: BilibiliMedia): UnifiedItem {
     cover: coverUrl,
     author: {
       name: media.upper.name,
-      avatar: `/images/${media.upper.face.split('/').pop() || ''}`,
+      avatar: `/images_bilibili/${media.upper.face.split('/').pop() || ''}`,
     },
     url: videoUrl,
     tags: [], // Bilibili media doesn't have tags in the current structure

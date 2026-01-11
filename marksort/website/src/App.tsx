@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import type { UnifiedItem, Category } from './types';
-import { 
-  loadUnifiedItems, 
-  generateCategories, 
-  filterItemsByCategory 
+import {
+  loadUnifiedItems,
+  generateCategories,
+  filterItemsByCategory
 } from './services/dataService';
 import CategoryNav from './components/CategoryNav';
 import NoteCard from './components/NoteCard';
@@ -22,10 +22,10 @@ function App() {
         setLoading(true);
         const loadedItems = await loadUnifiedItems();
         setItems(loadedItems);
-        
+
         const generatedCategories = generateCategories(loadedItems);
         setCategories(generatedCategories);
-        
+
         setError(null);
       } catch (err) {
         console.error('Failed to load items:', err);
@@ -39,7 +39,7 @@ function App() {
   }, []);
 
   const activeCategory = categories.find(cat => cat.id === activeCategoryId) || categories[0];
-  const filteredItems = activeCategory 
+  const filteredItems = activeCategory
     ? filterItemsByCategory(items, activeCategory)
     : items;
 
@@ -72,8 +72,8 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <h1 className="app-title">
-            <span className="title-icon">📕</span>
-            收藏内容分类展示
+            <span className="title-icon">🏛️</span>
+            MarkSort
           </h1>
           <p className="app-subtitle">共 {items.length} 条内容</p>
         </div>

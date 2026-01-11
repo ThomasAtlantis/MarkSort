@@ -14,7 +14,7 @@ dist-ssr
 
 # Data files (contains sensitive information)
 public/*.json
-public/images/
+public/images*
 
 # Editor directories and files
 .vscode/*

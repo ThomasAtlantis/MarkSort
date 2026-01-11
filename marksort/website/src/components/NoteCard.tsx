@@ -63,8 +63,12 @@ export default function NoteCard({ item }: NoteCardProps) {
       bvid: bvid,
       cid: String(cid),
       p: String(page),
+      autoplay: '1',  // 不自动播放
+      muted: '0',     // 关闭静音，启用声音
+      danmaku: '0',   // 显示弹幕
+      high_quality: '1', // 高质量
     });
-    return `//player.bilibili.com/player.html?${params.toString()}`;
+    return `https://player.bilibili.com/player.html?${params.toString()}`;
   };
 
   return (
@@ -80,7 +84,9 @@ export default function NoteCard({ item }: NoteCardProps) {
                   className="bilibili-iframe"
                   scrolling="no"
                   style={{ border: 'none' }}
-                  allowFullScreen
+                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                  frameBorder="0"
+                  sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox"
                 />
               ) : (
                 videoUrl && (
